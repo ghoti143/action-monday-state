@@ -1,7 +1,7 @@
-import mondaySdk from 'monday-sdk-js';
+import mondaySdk from "monday-sdk-js";
 
-import assert from 'assert';
-import { get } from 'lodash';
+import assert from "assert";
+import { get } from "lodash";
 import * as core from "@actions/core";
 
 const monday = mondaySdk();
@@ -11,7 +11,7 @@ const monday = mondaySdk();
  * @param {string} token - AWS SDK Token, provided by monday.com
  */
 function initializeSdk(token) {
-  assert.ok(!!token, 'Monday Token is required');
+  assert.ok(!!token, "Monday Token is required");
   monday.setToken(token);
 }
 
@@ -21,10 +21,10 @@ function initializeSdk(token) {
  * @returns {string} - String with escaped special characters
  */
 function escapeStringRegexp(string) {
-  if (!string) { return string; }
-  return string
-    .replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')
-    .replace(/-/g, '\\x2d');
+  if (!string) {
+    return string;
+  }
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&").replace(/-/g, "\\x2d");
 }
 
 /**
@@ -36,23 +36,29 @@ function escapeStringRegexp(string) {
  * @returns {string[]}- List of monday.com item IDs
  */
 function parseItemIds(text, { prefix, postfix, multiple } = {}) {
-  const pre = escapeStringRegexp(prefix) || '(?<!\\d)';
-  const pos = escapeStringRegexp(postfix) || '(?!\\d)';
+  const pre = escapeStringRegexp(prefix) || "(?<!\\d)";
+  const pos = escapeStringRegexp(postfix) || "(?!\\d)";
   const multi = multiple || false;
   const pattern = `${pre}\\d{10}${pos}`;
 
-  const flags = multiple ? ['g'] : [];
+  const flags = multiple ? ["g"] : [];
   const regex = new RegExp(pattern, flags);
   let matches = text.match(regex);
 
-  assert.ok(matches && matches.length > 0, 'No monday.com Item-ID was found');
+  assert.ok(matches && matches.length > 0, "No monday.com Item-ID was found");
   matches = matches.map((match) => {
     let m = match;
-    if (prefix) { m = m.slice(prefix.length); }
-    if (postfix) { m = m.slice(0, m.length - postfix.length); }
+    if (prefix) {
+      m = m.slice(prefix.length);
+    }
+    if (postfix) {
+      m = m.slice(0, m.length - postfix.length);
+    }
     return m;
-  })
-  if (!multi) { return [matches[0]]; }
+  });
+  if (!multi) {
+    return [matches[0]];
+  }
   return [...new Set(matches)];
 }
 
@@ -67,8 +73,11 @@ async function boardByItem(itemId) {
       board { id }
     }
   }`);
-  const boardId = await get(boardQuery, 'data.items[0].board.id', undefined);
-  assert.ok(boardId, `Item with id ${itemId} could not be fetched through monday.com API. Ensure your API Token has sufficient access rights!`);
+  const boardId = await get(boardQuery, "data.items[0].board.id", undefined);
+  assert.ok(
+    boardId,
+    `Item with id ${itemId} could not be fetched through monday.com API. Ensure your API Token has sufficient access rights!`
+  );
   return boardId;
 }
 
@@ -84,10 +93,16 @@ async function columnIdByTitle(boardId, columnTitle) {
       columns { title, id }
     }
   }`);
-  const columns = get(columnQuery, 'data.boards[0].columns');
-  assert.ok(!!columns, `Unable to load columns for board with ID ${boardId}. Ensure your API Token has sufficient access rights!`);
+  const columns = get(columnQuery, "data.boards[0].columns");
+  assert.ok(
+    !!columns,
+    `Unable to load columns for board with ID ${boardId}. Ensure your API Token has sufficient access rights!`
+  );
   const correctColumn = columns.find((col) => col.title === columnTitle);
-  assert.ok(!!correctColumn, `Column with title ${columnTitle} could not be found in board with ID ${boardId} where the given item is present`);
+  assert.ok(
+    !!correctColumn,
+    `Column with title ${columnTitle} could not be found in board with ID ${boardId} where the given item is present`
+  );
   return correctColumn.id;
 }
 
@@ -105,8 +120,8 @@ async function getItemStatus(itemId, columnId) {
       }
     }
   }`);
-  const statusText = get(statusQuery, 'data.items[0].column_values[0].text');
-  return statusText || '';
+  const statusText = get(statusQuery, "data.items[0].column_values[0].text");
+  return statusText || "";
 }
 
 /**
@@ -120,8 +135,8 @@ async function getItemName(itemId) {
       name
     }
   }`);
-  const name = get(nameQuery, 'data.items[0].name');
-  return name || '';
+  const name = get(nameQuery, "data.items[0].name");
+  return name || "";
 }
 
 /**
@@ -133,13 +148,20 @@ async function getItemName(itemId) {
  * @returns {Promise<undefined>} - Updated item status
  */
 async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
-  const mutationQuery = await monday.api(`mutation change_column_value($value: JSON!) {
+  const mutationQuery = await monday.api(
+    `mutation {
     change_column_value (item_id: ${itemId}, board_id: ${boardId}, column_id: "${columnId}", value: $value) {
         column_values (ids: ${columnId}) { text }
     }
-  }`, { variables: { value: JSON.stringify({ label: columnStatus }) } });
-  const newStatus = get(mutationQuery, 'data.change_column_value.column_values[0].text');
-  assert.equal(newStatus, columnStatus, `Failed to set Item status to ${columnStatus} - given status text probably does not exist!`);
+  }`,
+    { variables: { value: JSON.stringify({ label: columnStatus }) } }
+  );
+  const newStatus = get(mutationQuery, "data.change_column_value.column_values[0].text");
+  assert.equal(
+    newStatus,
+    columnStatus,
+    `Failed to set Item status to ${columnStatus} - given status text probably does not exist!`
+  );
   return newStatus;
 }
 
@@ -173,42 +195,51 @@ export async function action({
   doNotFail,
 }) {
   initializeSdk(mondayToken);
-  core.debug('Initialized monday SDK')
+  core.debug("Initialized monday SDK");
 
   let itemIds;
   try {
-    itemIds = parseItemIds(text, { prefix, postfix, multiple })
-  } catch(e) {
-    if (doNotFail) { return { itemIds: [], message: e.message }; }
+    itemIds = parseItemIds(text, { prefix, postfix, multiple });
+  } catch (e) {
+    if (doNotFail) {
+      return { itemIds: [], message: e.message };
+    }
     throw e;
   }
-  core.debug(`Parsed text, found Item with IDs ${JSON.stringify(itemIds)}`)
+  core.debug(`Parsed text, found Item with IDs ${JSON.stringify(itemIds)}`);
 
-  const messagePrefix = '![monday.com](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Monday_logo.svg/320px-Monday_logo.svg.png)\nThe status of the following items has been referenced on monday.com:\n';
+  const messagePrefix =
+    "![monday.com](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Monday_logo.svg/320px-Monday_logo.svg.png)\nThe status of the following items has been referenced on monday.com:\n";
   const itemMessages = [];
 
-  await Promise.all(itemIds.map(async (itemId) => {
-    const boardId = await boardByItem(itemId);
-    core.debug(`Found board corresponding to Item. Board-iD is: ${boardId}`)
+  await Promise.all(
+    itemIds.map(async (itemId) => {
+      const boardId = await boardByItem(itemId);
+      core.debug(`Found board corresponding to Item. Board-iD is: ${boardId}`);
 
-    const columnId = statusColumnId || await columnIdByTitle(boardId, statusColumnTitle);
-    core.debug(`Found Column ID: ${columnId}`)
+      const columnId = statusColumnId || (await columnIdByTitle(boardId, statusColumnTitle));
+      core.debug(`Found Column ID: ${columnId}`);
 
-    const currentStatus = !!statusBefore ? await getItemStatus(itemId, columnId) : undefined;
+      const currentStatus = !!statusBefore ? await getItemStatus(itemId, columnId) : undefined;
 
-    if (statusBefore && (statusBefore !== currentStatus)){ return; }
+      if (statusBefore && statusBefore !== currentStatus) {
+        return;
+      }
 
-    const newStatus = await updateItemStatus(itemId, boardId, columnId, status);
-    core.debug(`Updated status to ${newStatus}`);
+      const newStatus = await updateItemStatus(itemId, boardId, columnId, status);
+      core.debug(`Updated status to ${newStatus}`);
 
-    const itemName = await getItemName(itemId);
+      const itemName = await getItemName(itemId);
 
-    const link = mondayOrganization ? `[↪](https://${mondayOrganization}.monday.com/boards/${boardId}/pulses/${itemId})` : '';
-    const itemMessage = `- \[${newStatus}\] ${itemName} ${link}\n`;
-    itemMessages.push(itemMessage);
-  }));
+      const link = mondayOrganization
+        ? `[↪](https://${mondayOrganization}.monday.com/boards/${boardId}/pulses/${itemId})`
+        : "";
+      const itemMessage = `- \[${newStatus}\] ${itemName} ${link}\n`;
+      itemMessages.push(itemMessage);
+    })
+  );
 
-  const message = `${messagePrefix} ${itemMessages.join(' ')}`
+  const message = `${messagePrefix} ${itemMessages.join(" ")}`;
   return {
     itemIds: itemIds.filter(Boolean),
     message,
@@ -224,4 +255,4 @@ export default {
   getItemName,
   updateItemStatus,
   action,
-}
+};
