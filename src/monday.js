@@ -160,7 +160,7 @@ async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
   assert.equal(
     newStatus,
     columnStatus,
-    `Failed to set Item status to ${columnStatus} - given status text probably does not exist!`
+    `Failed to set Item status to ${columnStatus} - given status text probably does not exist! (f00)`
   );
   return newStatus;
 }
