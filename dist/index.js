@@ -23393,7 +23393,7 @@ async function boardByItem(itemId) {
 async function columnIdByTitle(boardId, columnTitle) {
   const columnQuery = await monday.api(`query {
     boards (ids: ${boardId}) {
-      columns () { title, id }
+      columns { title, id }
     }
   }`);
   const columns = (0,lodash.get)(columnQuery, 'data.boards[0].columns');

@@ -6,7 +6,7 @@
     "dist/*"
   ],
   "scripts": {
-    "build": "ncc build src/index.js -o dist --source-map",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider ncc build src/index.js -o dist --source-map",
     "test": "jest --runInBand"
   },
   "repository": {
