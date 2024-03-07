@@ -23461,9 +23461,9 @@ async function getItemName(itemId) {
  */
 async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
   const mutationQuery = await monday.api(
-    `mutation {
+    `mutation change_column_value($value: JSON!) {
     change_column_value (item_id: ${itemId}, board_id: ${boardId}, column_id: "${columnId}", value: $value) {
-        column_values (ids: ${columnId}) { text }
+        column_values (ids: "${columnId}") { text }
     }
   }`,
     { variables: { value: JSON.stringify({ label: columnStatus }) } }
@@ -23472,7 +23472,7 @@ async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
   external_assert_default().equal(
     newStatus,
     columnStatus,
-    `Failed to set Item status to ${columnStatus} - given status text probably does not exist! (f00)`
+    `Failed to set Item status to ${columnStatus} - given status text probably does not exist!`
   );
   return newStatus;
 }
