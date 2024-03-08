@@ -23471,7 +23471,7 @@ async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
   external_assert_default().equal(
     newStatus,
     columnStatus,
-    `Failed to set Item status to ${columnStatus} - given status text probably does not exist!`
+    `Failed to set Item status to ${columnStatus} - new status: ${newStatus} given status text probably does not exist!`
   );
   return newStatus;
 }
