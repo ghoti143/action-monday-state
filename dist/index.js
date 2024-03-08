@@ -23467,7 +23467,7 @@ async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
       }
     }`
   );
-  const newStatus = (0,lodash.get)(mutationQuery, "data.change_column_value.column_values[0].text");
+  const newStatus = (0,lodash.get)(mutationQuery, "data.change_simple_column_value.column_values[0].text");
   external_assert_default().equal(
     newStatus,
     columnStatus,

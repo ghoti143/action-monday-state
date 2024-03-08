@@ -155,7 +155,7 @@ async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
       }
     }`
   );
-  const newStatus = get(mutationQuery, "data.change_column_value.column_values[0].text");
+  const newStatus = get(mutationQuery, "data.change_simple_column_value.column_values[0].text");
   assert.equal(
     newStatus,
     columnStatus,
