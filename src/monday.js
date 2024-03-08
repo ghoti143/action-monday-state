@@ -149,12 +149,11 @@ async function getItemName(itemId) {
  */
 async function updateItemStatus(itemId, boardId, columnId, columnStatus) {
   const mutationQuery = await monday.api(
-    `mutation change_column_value($value: JSON!) {
-    change_column_value (item_id: ${itemId}, board_id: ${boardId}, column_id: "${columnId}", value: $value) {
+    `mutation {
+      change_simple_column_value (item_id: ${itemId}, board_id: ${boardId}, column_id:"${columnId}", value: "${columnStatus}") {
         column_values (ids: "${columnId}") { text }
-    }
-  }`,
-    { variables: { value: JSON.stringify({ label: columnStatus }) } }
+      }
+    }`
   );
   const newStatus = get(mutationQuery, "data.change_column_value.column_values[0].text");
   assert.equal(
